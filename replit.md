@@ -74,12 +74,21 @@ The application uses five main tables:
 - **Achievements**: Milestone-based reward system for major accomplishments
 - **Progress Tracking**: Comprehensive visual indicators and statistics
 
-### Task Management
-- **CRUD Operations**: Full task lifecycle management
-- **Categorization**: Organized task categories (personal, work, health, etc.)
-- **Priority System**: Three-tier priority levels (low, medium, high)
-- **Scheduling**: Optional due times for tasks
-- **Date-based Organization**: Tasks organized by specific dates
+## User Interface Features
+
+### Dashboard Overview
+- **Progress Ring**: Large visual indicator showing daily completion percentage
+- **Goal Display**: Active goals with countdown timers and completion status
+- **Integrated Pomodoro Timer**: Built-in focus timer with task association
+- **Achievement Gallery**: Recent accomplishments and milestone rewards
+- **Gem Counter**: Visual display of earned gems for on-time completions
+
+### Task Interface Enhancements
+- **External Link Integration**: Clickable YouTube and resource links on each task
+- **Time Estimation Display**: Visual indicators for estimated completion time
+- **Gem Reward Badges**: Special indicators for on-time completion bonuses
+- **Pomodoro Integration**: One-click timer start for focused work sessions
+- **Priority Color Coding**: Visual priority system with color-coded badges
 
 ## Data Flow
 
