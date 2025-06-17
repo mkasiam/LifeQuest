@@ -6,6 +6,8 @@ import {
   type Goal, type InsertGoal,
   type PomodoroSession, type InsertPomodoroSession
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -40,172 +42,185 @@ export interface IStorage {
   createAchievement(achievement: InsertAchievement & { userId: number }): Promise<Achievement>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User> = new Map();
-  private goals: Map<number, Goal> = new Map();
-  private tasks: Map<number, Task> = new Map();
-  private pomodoroSessions: Map<number, PomodoroSession> = new Map();
-  private achievements: Map<number, Achievement> = new Map();
-  private currentUserId = 1;
-  private currentGoalId = 1;
-  private currentTaskId = 1;
-  private currentPomodoroId = 1;
-  private currentAchievementId = 1;
-
+export class DatabaseStorage implements IStorage {
   constructor() {
-    // Create a default user for demo purposes
-    this.createUser({ username: "Alex", password: "password" });
+    this.initializeDefaultUser();
+  }
+
+  private async initializeDefaultUser() {
+    try {
+      const existingUser = await this.getUserByUsername("Alex");
+      if (!existingUser) {
+        await this.createUser({ username: "Alex", password: "password" });
+      }
+    } catch (error) {
+      console.error("Error initializing default user:", error);
+    }
   }
 
   // User methods
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.username === username);
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = {
-      ...insertUser,
-      id,
-      level: 1,
-      xp: 0,
-      streak: 7, // Default streak for demo
-      gems: 0,
-      lastActiveDate: new Date().toISOString().split('T')[0],
-    };
-    this.users.set(id, user);
+    const [user] = await db
+      .insert(users)
+      .values({
+        ...insertUser,
+        level: 1,
+        xp: 0,
+        streak: 7,
+        gems: 0,
+        lastActiveDate: new Date().toISOString().split('T')[0],
+      })
+      .returning();
     return user;
   }
 
   async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
-    const user = this.users.get(id);
-    if (!user) return undefined;
-    
-    const updatedUser = { ...user, ...updates };
-    this.users.set(id, updatedUser);
-    return updatedUser;
+    const [user] = await db
+      .update(users)
+      .set(updates)
+      .where(eq(users.id, id))
+      .returning();
+    return user || undefined;
   }
 
   // Goal methods
   async getGoals(userId: number): Promise<Goal[]> {
-    return Array.from(this.goals.values()).filter(goal => goal.userId === userId);
+    return await db.select().from(goals).where(eq(goals.userId, userId));
   }
 
   async getGoal(id: number): Promise<Goal | undefined> {
-    return this.goals.get(id);
+    const [goal] = await db.select().from(goals).where(eq(goals.id, id));
+    return goal || undefined;
   }
 
   async createGoal(goalData: InsertGoal & { userId: number }): Promise<Goal> {
-    const id = this.currentGoalId++;
-    const goal: Goal = {
-      ...goalData,
-      id,
-      description: goalData.description || null,
-      completed: false,
-      completedAt: null,
-      createdAt: new Date(),
-    };
-    this.goals.set(id, goal);
+    const [goal] = await db
+      .insert(goals)
+      .values({
+        ...goalData,
+        description: goalData.description || null,
+        completed: false,
+        completedAt: null,
+        createdAt: new Date(),
+      })
+      .returning();
     return goal;
   }
 
   async updateGoal(id: number, updates: Partial<Goal>): Promise<Goal | undefined> {
-    const goal = this.goals.get(id);
-    if (!goal) return undefined;
-    
-    const updatedGoal = { ...goal, ...updates };
-    this.goals.set(id, updatedGoal);
-    return updatedGoal;
+    const [goal] = await db
+      .update(goals)
+      .set(updates)
+      .where(eq(goals.id, id))
+      .returning();
+    return goal || undefined;
   }
 
   async deleteGoal(id: number): Promise<boolean> {
-    return this.goals.delete(id);
+    const result = await db.delete(goals).where(eq(goals.id, id));
+    return result.rowCount > 0;
   }
 
   async completeGoal(id: number): Promise<Goal | undefined> {
-    const goal = this.goals.get(id);
-    if (!goal) return undefined;
-    
-    const completedGoal = {
-      ...goal,
-      completed: true,
-      completedAt: new Date(),
-    };
-    this.goals.set(id, completedGoal);
-    return completedGoal;
+    const [goal] = await db
+      .update(goals)
+      .set({
+        completed: true,
+        completedAt: new Date(),
+      })
+      .where(eq(goals.id, id))
+      .returning();
+    return goal || undefined;
   }
 
   // Task methods
   async getTasks(userId: number, date?: string, goalId?: number): Promise<Task[]> {
-    let filteredTasks = Array.from(this.tasks.values()).filter(task => task.userId === userId);
+    let query = db.select().from(tasks).where(eq(tasks.userId, userId));
     
-    if (date) {
-      filteredTasks = filteredTasks.filter(task => task.date === date);
+    if (date && goalId) {
+      return await db.select().from(tasks)
+        .where(eq(tasks.userId, userId))
+        .where(eq(tasks.date, date))
+        .where(eq(tasks.goalId, goalId));
+    } else if (date) {
+      return await db.select().from(tasks)
+        .where(eq(tasks.userId, userId))
+        .where(eq(tasks.date, date));
+    } else if (goalId) {
+      return await db.select().from(tasks)
+        .where(eq(tasks.userId, userId))
+        .where(eq(tasks.goalId, goalId));
     }
     
-    if (goalId) {
-      filteredTasks = filteredTasks.filter(task => task.goalId === goalId);
-    }
-    
-    return filteredTasks;
+    return await db.select().from(tasks).where(eq(tasks.userId, userId));
   }
 
   async getTask(id: number): Promise<Task | undefined> {
-    return this.tasks.get(id);
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, id));
+    return task || undefined;
   }
 
   async createTask(taskData: InsertTask & { userId: number }): Promise<Task> {
-    const id = this.currentTaskId++;
-    const task: Task = {
-      ...taskData,
-      id,
-      goalId: taskData.goalId || null,
-      estimatedTime: taskData.estimatedTime || null,
-      externalLinks: taskData.externalLinks || null,
-      xpReward: taskData.xpReward || 20,
-      gemReward: taskData.gemReward || 1,
-      dueTime: taskData.dueTime || null,
-      completed: false,
-      completedAt: null,
-      completedOnTime: false,
-      createdAt: new Date(),
-    };
-    this.tasks.set(id, task);
+    const [task] = await db
+      .insert(tasks)
+      .values({
+        ...taskData,
+        goalId: taskData.goalId || null,
+        estimatedTime: taskData.estimatedTime || null,
+        externalLinks: taskData.externalLinks || null,
+        xpReward: taskData.xpReward || 20,
+        gemReward: taskData.gemReward || 1,
+        dueTime: taskData.dueTime || null,
+        completed: false,
+        completedAt: null,
+        completedOnTime: false,
+        createdAt: new Date(),
+      })
+      .returning();
     return task;
   }
 
   async updateTask(id: number, updates: Partial<Task>): Promise<Task | undefined> {
-    const task = this.tasks.get(id);
-    if (!task) return undefined;
-    
-    const updatedTask = { ...task, ...updates };
-    this.tasks.set(id, updatedTask);
-    return updatedTask;
+    const [task] = await db
+      .update(tasks)
+      .set(updates)
+      .where(eq(tasks.id, id))
+      .returning();
+    return task || undefined;
   }
 
   async deleteTask(id: number): Promise<boolean> {
-    return this.tasks.delete(id);
+    const result = await db.delete(tasks).where(eq(tasks.id, id));
+    return result.rowCount > 0;
   }
 
   async completeTask(id: number): Promise<Task | undefined> {
-    const task = this.tasks.get(id);
+    const task = await this.getTask(id);
     if (!task) return undefined;
     
     const completedAt = new Date();
     const dueDate = task.dueTime ? new Date(`${task.date}T${task.dueTime}`) : null;
     const completedOnTime = dueDate ? completedAt <= dueDate : true;
     
-    const completedTask = {
-      ...task,
-      completed: true,
-      completedAt,
-      completedOnTime,
-    };
-    this.tasks.set(id, completedTask);
+    const [completedTask] = await db
+      .update(tasks)
+      .set({
+        completed: true,
+        completedAt,
+        completedOnTime,
+      })
+      .where(eq(tasks.id, id))
+      .returning();
     
     // Update user XP and gems
     const user = await this.getUser(task.userId);
@@ -221,33 +236,35 @@ export class MemStorage implements IStorage {
 
   // Pomodoro methods
   async getPomodoroSessions(userId: number): Promise<PomodoroSession[]> {
-    return Array.from(this.pomodoroSessions.values()).filter(session => session.userId === userId);
+    return await db.select().from(pomodoroSessions).where(eq(pomodoroSessions.userId, userId));
   }
 
   async createPomodoroSession(sessionData: InsertPomodoroSession & { userId: number }): Promise<PomodoroSession> {
-    const id = this.currentPomodoroId++;
-    const session: PomodoroSession = {
-      ...sessionData,
-      id,
-      taskId: sessionData.taskId || null,
-      completed: false,
-      startedAt: new Date(),
-      completedAt: null,
-    };
-    this.pomodoroSessions.set(id, session);
+    const [session] = await db
+      .insert(pomodoroSessions)
+      .values({
+        ...sessionData,
+        taskId: sessionData.taskId || null,
+        completed: false,
+        startedAt: new Date(),
+        completedAt: null,
+      })
+      .returning();
     return session;
   }
 
   async completePomodoroSession(id: number): Promise<PomodoroSession | undefined> {
-    const session = this.pomodoroSessions.get(id);
+    const [session] = await db.select().from(pomodoroSessions).where(eq(pomodoroSessions.id, id));
     if (!session) return undefined;
     
-    const completedSession = {
-      ...session,
-      completed: true,
-      completedAt: new Date(),
-    };
-    this.pomodoroSessions.set(id, completedSession);
+    const [completedSession] = await db
+      .update(pomodoroSessions)
+      .set({
+        completed: true,
+        completedAt: new Date(),
+      })
+      .where(eq(pomodoroSessions.id, id))
+      .returning();
     
     // Award bonus XP for completed pomodoro
     const user = await this.getUser(session.userId);
@@ -261,19 +278,19 @@ export class MemStorage implements IStorage {
 
   // Achievement methods
   async getAchievements(userId: number): Promise<Achievement[]> {
-    return Array.from(this.achievements.values()).filter(achievement => achievement.userId === userId);
+    return await db.select().from(achievements).where(eq(achievements.userId, userId));
   }
 
   async createAchievement(achievementData: InsertAchievement & { userId: number }): Promise<Achievement> {
-    const id = this.currentAchievementId++;
-    const achievement: Achievement = {
-      ...achievementData,
-      id,
-      earnedAt: new Date(),
-    };
-    this.achievements.set(id, achievement);
+    const [achievement] = await db
+      .insert(achievements)
+      .values({
+        ...achievementData,
+        earnedAt: new Date(),
+      })
+      .returning();
     return achievement;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
