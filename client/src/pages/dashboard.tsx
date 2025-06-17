@@ -104,7 +104,7 @@ export default function Dashboard() {
         <header className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-3xl font-bold text-gray-900">
-              Good morning, {user?.username || "Player"}!
+              Good morning, {user?.displayName || user?.email || "Player"}!
             </h2>
             <p className="text-gray-600 mt-1">Ready to level up today? Let's crush those milestones!</p>
           </div>

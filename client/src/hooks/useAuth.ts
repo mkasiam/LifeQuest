@@ -1,14 +1,36 @@
 import { useState, useEffect } from 'react';
 import { User as FirebaseUser, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
-import { auth, googleProvider } from '@/lib/firebase';
+import { firebasePromise } from '@/lib/firebase';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
 import type { User } from '@shared/schema';
 
 export function useAuth() {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [firebaseInitialized, setFirebaseInitialized] = useState(false);
   const queryClient = useQueryClient();
+
+  // Initialize Firebase
+  useEffect(() => {
+    firebasePromise
+      .then(({ auth }) => {
+        setFirebaseInitialized(true);
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+          setFirebaseUser(user);
+          setLoading(false);
+          
+          if (!user) {
+            queryClient.clear();
+          }
+        });
+
+        return () => unsubscribe();
+      })
+      .catch((error) => {
+        console.error('Firebase initialization failed:', error);
+        setLoading(false);
+      });
+  }, [queryClient]);
 
   // Query to get user data from our database
   const { data: user } = useQuery({
@@ -30,13 +52,13 @@ export function useAuth() {
       
       return response.json() as Promise<User>;
     },
-    enabled: !!firebaseUser,
+    enabled: !!firebaseUser && firebaseInitialized,
   });
 
   const login = async () => {
     try {
+      const { auth, googleProvider } = await firebasePromise;
       await signInWithPopup(auth, googleProvider);
-      // User state will be updated via onAuthStateChanged
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -45,33 +67,21 @@ export function useAuth() {
 
   const logout = async () => {
     try {
+      const { auth } = await firebasePromise;
       await signOut(auth);
-      queryClient.clear(); // Clear all cached data on logout
+      queryClient.clear();
     } catch (error) {
       console.error('Logout error:', error);
       throw error;
     }
   };
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setFirebaseUser(user);
-      setLoading(false);
-      
-      if (!user) {
-        queryClient.clear(); // Clear cached data when user signs out
-      }
-    });
-
-    return unsubscribe;
-  }, [queryClient]);
-
   return {
     user,
     firebaseUser,
     login,
     logout,
-    loading,
-    isAuthenticated: !!firebaseUser,
+    loading: loading || !firebaseInitialized,
+    isAuthenticated: !!firebaseUser && firebaseInitialized,
   };
 }
