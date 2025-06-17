@@ -48,14 +48,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   private async initializeDefaultUser() {
-    try {
-      const existingUser = await this.getUserByUsername("Alex");
-      if (!existingUser) {
-        await this.createUser({ username: "Alex", password: "password" });
-      }
-    } catch (error) {
-      console.error("Error initializing default user:", error);
-    }
+    // Firebase authentication handles user creation - no default user needed
+    console.log("Firebase authentication enabled");
   }
 
   // User methods
@@ -64,8 +58,8 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
+  async getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.firebaseUid, firebaseUid));
     return user || undefined;
   }
 
@@ -76,7 +70,7 @@ export class DatabaseStorage implements IStorage {
         ...insertUser,
         level: 1,
         xp: 0,
-        streak: 7,
+        streak: 0,
         gems: 0,
         lastActiveDate: new Date().toISOString().split('T')[0],
       })
