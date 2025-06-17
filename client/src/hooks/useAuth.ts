@@ -6,12 +6,21 @@ import type { User } from '@shared/schema';
 
 export function useAuth() {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
+  const [demoMode, setDemoMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [firebaseInitialized, setFirebaseInitialized] = useState(false);
   const queryClient = useQueryClient();
 
-  // Initialize Firebase
+  // Check for demo mode from localStorage
   useEffect(() => {
+    const isDemoMode = localStorage.getItem('lifequest_demo_mode') === 'true';
+    if (isDemoMode) {
+      setDemoMode(true);
+      setLoading(false);
+      return;
+    }
+
+    // Initialize Firebase
     firebasePromise
       .then(({ auth }) => {
         setFirebaseInitialized(true);

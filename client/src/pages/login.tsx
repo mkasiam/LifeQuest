@@ -33,7 +33,7 @@ export default function Login() {
             Transform your goals into an epic adventure. Sign in to start your quest!
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <Button
             onClick={handleGoogleLogin}
             disabled={loading}
@@ -47,10 +47,32 @@ export default function Login() {
             )}
             {loading ? 'Signing in...' : 'Continue with Google'}
           </Button>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Or try demo mode
+              </span>
+            </div>
+          </div>
+
+          <Button
+            onClick={() => setLocation('/')}
+            className="w-full"
+            variant="secondary"
+          >
+            Enter Demo Mode
+          </Button>
           
           <div className="mt-6 text-center text-sm text-muted-foreground">
             <p>
               Create goals, track progress, and earn rewards as you level up your life!
+            </p>
+            <p className="mt-2 text-xs">
+              Demo mode lets you explore the app without signing in
             </p>
           </div>
         </CardContent>
