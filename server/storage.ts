@@ -128,7 +128,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteGoal(id: number): Promise<boolean> {
     const result = await db.delete(goals).where(eq(goals.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   async completeGoal(id: number): Promise<Goal | undefined> {
@@ -145,21 +145,25 @@ export class DatabaseStorage implements IStorage {
 
   // Task methods
   async getTasks(userId: number, date?: string, goalId?: number): Promise<Task[]> {
-    let query = db.select().from(tasks).where(eq(tasks.userId, userId));
-    
     if (date && goalId) {
       return await db.select().from(tasks)
-        .where(eq(tasks.userId, userId))
-        .where(eq(tasks.date, date))
-        .where(eq(tasks.goalId, goalId));
+        .where(and(
+          eq(tasks.userId, userId),
+          eq(tasks.date, date),
+          eq(tasks.goalId, goalId)
+        ));
     } else if (date) {
       return await db.select().from(tasks)
-        .where(eq(tasks.userId, userId))
-        .where(eq(tasks.date, date));
+        .where(and(
+          eq(tasks.userId, userId),
+          eq(tasks.date, date)
+        ));
     } else if (goalId) {
       return await db.select().from(tasks)
-        .where(eq(tasks.userId, userId))
-        .where(eq(tasks.goalId, goalId));
+        .where(and(
+          eq(tasks.userId, userId),
+          eq(tasks.goalId, goalId)
+        ));
     }
     
     return await db.select().from(tasks).where(eq(tasks.userId, userId));
@@ -201,7 +205,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteTask(id: number): Promise<boolean> {
     const result = await db.delete(tasks).where(eq(tasks.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   async completeTask(id: number): Promise<Task | undefined> {
