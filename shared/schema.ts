@@ -1,16 +1,19 @@
-import { pgTable, text, serial, integer, boolean, timestamp, date } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, date, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  firebaseUid: varchar("firebase_uid", { length: 128 }).notNull().unique(),
+  email: varchar("email", { length: 255 }).notNull(),
+  displayName: varchar("display_name", { length: 100 }),
+  photoURL: varchar("photo_url", { length: 500 }),
   level: integer("level").default(1).notNull(),
   xp: integer("xp").default(0).notNull(),
   streak: integer("streak").default(0).notNull(),
   gems: integer("gems").default(0).notNull(),
   lastActiveDate: date("last_active_date"),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const goals = pgTable("goals", {
@@ -63,9 +66,14 @@ export const achievements = pgTable("achievements", {
   earnedAt: timestamp("earned_at").defaultNow().notNull(),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  level: true,
+  xp: true,
+  streak: true,
+  gems: true,
+  lastActiveDate: true,
+  createdAt: true,
 });
 
 export const insertGoalSchema = createInsertSchema(goals).omit({
