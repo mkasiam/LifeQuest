@@ -67,13 +67,15 @@ export default function Sidebar({ user, achievements = [] }: SidebarProps) {
           {navItems.map((item) => {
             const isActive = location === item.path;
             return (
-              <Link key={item.path} href={item.path} className={`flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors ${
-                isActive 
-                  ? "text-primary bg-primary/10" 
-                  : "text-gray-600 hover:bg-gray-100"
-              }`}>
-                <i className={item.icon}></i>
-                <span>{item.label}</span>
+              <Link key={item.path} href={item.path}>
+                <div className={`flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors ${
+                  isActive 
+                    ? "text-primary bg-primary/10" 
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}>
+                  <i className={item.icon}></i>
+                  <span>{item.label}</span>
+                </div>
               </Link>
             );
           })}

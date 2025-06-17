@@ -287,9 +287,8 @@ export default function Dashboard() {
             <div className="space-y-4">
               {filteredTasks.length > 0 ? (
                 filteredTasks.map((task) => (
-                  <div className="relative">
+                  <div key={task.id} className="relative">
                     <TaskItem
-                      key={task.id}
                       task={task}
                       onComplete={() => completeTaskMutation.mutate(task.id)}
                       onDelete={() => deleteTaskMutation.mutate(task.id)}
