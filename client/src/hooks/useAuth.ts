@@ -45,6 +45,15 @@ export function useAuth() {
   const { data: user } = useQuery({
     queryKey: ['/api/user'],
     queryFn: async () => {
+      if (demoMode) {
+        // Return demo user data
+        const response = await fetch('/api/user?demo=true');
+        if (!response.ok) {
+          throw new Error('Failed to fetch demo user');
+        }
+        return response.json() as Promise<User>;
+      }
+      
       if (!firebaseUser) return null;
       
       const token = await firebaseUser.getIdToken();
@@ -61,7 +70,7 @@ export function useAuth() {
       
       return response.json() as Promise<User>;
     },
-    enabled: !!firebaseUser && firebaseInitialized,
+    enabled: demoMode || (!!firebaseUser && firebaseInitialized),
   });
 
   const login = async () => {
@@ -74,10 +83,21 @@ export function useAuth() {
     }
   };
 
+  const loginDemo = async () => {
+    localStorage.setItem('lifequest_demo_mode', 'true');
+    setDemoMode(true);
+    queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+  };
+
   const logout = async () => {
     try {
-      const { auth } = await firebasePromise;
-      await signOut(auth);
+      if (demoMode) {
+        localStorage.removeItem('lifequest_demo_mode');
+        setDemoMode(false);
+      } else {
+        const { auth } = await firebasePromise;
+        await signOut(auth);
+      }
       queryClient.clear();
     } catch (error) {
       console.error('Logout error:', error);
@@ -89,8 +109,10 @@ export function useAuth() {
     user,
     firebaseUser,
     login,
+    loginDemo,
     logout,
-    loading: loading || !firebaseInitialized,
-    isAuthenticated: !!firebaseUser && firebaseInitialized,
+    loading: loading || (!firebaseInitialized && !demoMode),
+    isAuthenticated: (!!firebaseUser && firebaseInitialized) || demoMode,
+    demoMode,
   };
 }

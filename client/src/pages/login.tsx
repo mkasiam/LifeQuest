@@ -8,7 +8,7 @@ import { Loader2 } from 'lucide-react';
 
 export default function Login() {
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, loginDemo } = useAuth();
   const [, setLocation] = useLocation();
 
   const handleGoogleLogin = async () => {
@@ -19,6 +19,18 @@ export default function Login() {
     } catch (error) {
       console.error('Login failed:', error);
       // Error handling could include toast notifications here
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDemoLogin = async () => {
+    try {
+      setLoading(true);
+      await loginDemo();
+      setLocation('/');
+    } catch (error) {
+      console.error('Demo login failed:', error);
     } finally {
       setLoading(false);
     }
@@ -60,10 +72,14 @@ export default function Login() {
           </div>
 
           <Button
-            onClick={() => setLocation('/')}
+            onClick={handleDemoLogin}
+            disabled={loading}
             className="w-full"
             variant="secondary"
           >
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            ) : null}
             Enter Demo Mode
           </Button>
           

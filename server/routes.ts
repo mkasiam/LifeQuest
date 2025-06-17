@@ -61,15 +61,32 @@ function generateGoalTimeline(goal: Goal): (InsertTask & { date: string })[] {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Get current authenticated user (temporarily without auth for demo)
+  // Get current authenticated user
   app.get("/api/user", async (req, res) => {
     try {
-      // For demo purposes, check if Firebase is properly configured
-      if (!process.env.FIREBASE_PROJECT_ID) {
-        return res.status(401).json({ message: "Authentication not configured" });
+      const isDemo = req.query.demo === 'true';
+      
+      if (isDemo) {
+        // Return demo user for demo mode
+        const demoUser = {
+          id: 1,
+          firebaseUid: "demo-user-12345",
+          email: "demo@lifequest.com",
+          displayName: "Demo Explorer",
+          photoURL: null,
+          level: 3,
+          xp: 250,
+          streak: 5,
+          gems: 12,
+          lastActiveDate: new Date().toISOString().split('T')[0],
+          createdAt: new Date(),
+        };
+        
+        return res.json(demoUser);
       }
       
-      // Return mock user for now until Firebase Admin is properly configured
+      // For authenticated users, we would normally verify Firebase token here
+      // For now, return demo user as fallback
       const mockUser = {
         id: 1,
         firebaseUid: "demo-user",
