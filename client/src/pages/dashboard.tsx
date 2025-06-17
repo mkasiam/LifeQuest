@@ -88,9 +88,11 @@ export default function Dashboard() {
     completedTasks: 0,
     totalTasks: 0,
     earnedXP: 0,
+    earnedGems: 0,
   };
 
   const user = dashboardData?.user;
+  const goals = dashboardData?.goals || [];
   const achievements = dashboardData?.achievements || [];
 
   return (
@@ -111,6 +113,10 @@ export default function Dashboard() {
               <i className="fas fa-fire text-yellow-500"></i>
               <span className="font-semibold text-yellow-700">{user?.streak || 0} day streak</span>
             </div>
+            <Button onClick={() => setIsGoalModalOpen(true)} variant="outline" className="border-primary text-primary hover:bg-primary/10">
+              <i className="fas fa-bullseye mr-2"></i>
+              New Goal
+            </Button>
             <Button onClick={() => setIsTaskModalOpen(true)} className="bg-primary hover:bg-primary/90">
               <i className="fas fa-plus mr-2"></i>
               New Task
@@ -137,9 +143,17 @@ export default function Dashboard() {
                   <span className="font-semibold text-primary">{stats.completedTasks}</span> of{" "}
                   <span>{stats.totalTasks}</span> tasks completed
                 </p>
-                <p className="text-sm text-gray-500 mt-1">
-                  +<span>{stats.earnedXP}</span> XP earned today
-                </p>
+                <div className="flex items-center justify-center space-x-4 mt-2 text-sm">
+                  <span className="text-gray-500">
+                    +<span>{stats.earnedXP}</span> XP earned today
+                  </span>
+                  {stats.earnedGems > 0 && (
+                    <span className="text-amber-600 font-medium">
+                      <i className="fas fa-gem mr-1"></i>
+                      +{stats.earnedGems} Gem{stats.earnedGems !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="flex space-x-3">
@@ -155,27 +169,70 @@ export default function Dashboard() {
 
           {/* Stats Cards */}
           <div className="space-y-6">
-            {/* Weekly Progress */}
+            {/* Active Goals */}
             <Card className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h4 className="font-semibold text-gray-900">This Week</h4>
-                <i className="fas fa-calendar-week text-gray-400"></i>
+                <h4 className="font-semibold text-gray-900">Active Goals</h4>
+                <i className="fas fa-bullseye text-gray-400"></i>
               </div>
               <div className="space-y-3">
-                {["Mon", "Tue", "Wed"].map((day, index) => (
-                  <div key={day} className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">{day}</span>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-12 bg-gray-200 rounded-full h-2">
-                        <div 
-                          className={`h-2 rounded-full ${index < 2 ? 'bg-green-500' : 'bg-primary'}`}
-                          style={{ width: index === 0 ? '100%' : index === 1 ? '85%' : '70%' }}
-                        ></div>
+                {goals.length > 0 ? (
+                  goals.map((goal) => {
+                    const daysLeft = Math.ceil((new Date(goal.deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                    return (
+                      <div key={goal.id} className="flex items-center space-x-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                          goal.type === 'short-term' ? 'bg-blue-100' : 'bg-purple-100'
+                        }`}>
+                          <i className={`fas fa-target ${
+                            goal.type === 'short-term' ? 'text-blue-600' : 'text-purple-600'
+                          } text-sm`}></i>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900">{goal.title}</p>
+                          <p className="text-xs text-gray-500">
+                            {daysLeft > 0 ? `${daysLeft} days left` : 'Due today'}
+                          </p>
+                        </div>
                       </div>
-                      <i className={`fas ${index < 2 ? 'fa-check-circle text-green-500' : 'fa-clock text-primary'} text-sm`}></i>
-                    </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-gray-500 mb-3">No active goals yet</p>
+                    <Button 
+                      onClick={() => setIsGoalModalOpen(true)} 
+                      variant="outline" 
+                      size="sm"
+                      className="border-dashed"
+                    >
+                      <i className="fas fa-plus mr-2"></i>
+                      Create Goal
+                    </Button>
                   </div>
-                ))}
+                )}
+              </div>
+            </Card>
+
+            {/* Pomodoro Timer */}
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-semibold text-gray-900">Focus Timer</h4>
+                <i className="fas fa-clock text-gray-400"></i>
+              </div>
+              <div className="space-y-4">
+                {selectedTask && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-sm text-blue-700 font-medium">Selected Task:</p>
+                    <p className="text-sm text-blue-600">{selectedTask.title}</p>
+                  </div>
+                )}
+                <PomodoroTimer 
+                  task={selectedTask || undefined} 
+                  onSessionComplete={() => {
+                    queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+                  }}
+                />
               </div>
             </Card>
 
@@ -230,14 +287,27 @@ export default function Dashboard() {
             <div className="space-y-4">
               {filteredTasks.length > 0 ? (
                 filteredTasks.map((task) => (
-                  <TaskItem
-                    key={task.id}
-                    task={task}
-                    onComplete={() => completeTaskMutation.mutate(task.id)}
-                    onDelete={() => deleteTaskMutation.mutate(task.id)}
-                    isCompletingTask={completeTaskMutation.isPending}
-                    isDeletingTask={deleteTaskMutation.isPending}
-                  />
+                  <div className="relative">
+                    <TaskItem
+                      key={task.id}
+                      task={task}
+                      onComplete={() => completeTaskMutation.mutate(task.id)}
+                      onDelete={() => deleteTaskMutation.mutate(task.id)}
+                      isCompletingTask={completeTaskMutation.isPending}
+                      isDeletingTask={deleteTaskMutation.isPending}
+                    />
+                    {!task.completed && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute top-4 right-20 text-blue-500 hover:text-blue-700"
+                        onClick={() => setSelectedTask(task)}
+                        title="Start Pomodoro session for this task"
+                      >
+                        <i className="fas fa-clock"></i>
+                      </Button>
+                    )}
+                  </div>
                 ))
               ) : (
                 <div className="text-center py-8">
@@ -272,6 +342,15 @@ export default function Dashboard() {
         onClose={() => setIsTaskModalOpen(false)}
         onTaskCreated={() => {
           queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+        }}
+      />
+
+      <GoalModal
+        isOpen={isGoalModalOpen}
+        onClose={() => setIsGoalModalOpen(false)}
+        onGoalCreated={() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/goals"] });
           queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
         }}
       />

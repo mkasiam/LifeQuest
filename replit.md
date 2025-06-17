@@ -1,8 +1,8 @@
-# LifeQuest - Gamified Task Management Application
+# LifeQuest - Comprehensive Goal-Setting & Life Tracking Application
 
 ## Overview
 
-LifeQuest is a full-stack web application that gamifies task management by incorporating RPG-like elements such as experience points (XP), levels, streaks, and achievements. Users can create and manage daily tasks, earn XP for completing them, and track their progress through a leveling system.
+LifeQuest is a full-stack web application that transforms goal achievement into an engaging, game-like experience. The application combines goal-setting with automatic timeline generation, task management, Pomodoro timer integration, and RPG-style progression systems including XP, levels, streaks, gems, and achievements. Users can set short-term or long-term goals, automatically receive milestone tasks with deadlines, add external resources like YouTube videos, use focused work sessions with Pomodoro timers, and earn rewards for timely completion.
 
 ## System Architecture
 
@@ -32,9 +32,11 @@ LifeQuest is a full-stack web application that gamifies task management by incor
 ## Key Components
 
 ### Database Schema
-The application uses three main tables:
-- **Users**: Stores user credentials, level, XP, streaks, and activity tracking
-- **Tasks**: Manages task details, categories, priorities, completion status, and XP rewards
+The application uses five main tables:
+- **Users**: Stores user credentials, level, XP, streaks, gems, and activity tracking
+- **Goals**: Manages short-term and long-term goals with deadlines and completion status
+- **Tasks**: Enhanced task management with estimated time, external links, goal association, gem rewards, and on-time completion tracking
+- **Pomodoro Sessions**: Tracks focused work sessions with duration, completion status, and task association
 - **Achievements**: Tracks user achievements with timestamps and descriptions
 
 ### Authentication & Authorization
@@ -42,12 +44,35 @@ The application uses three main tables:
 - Session-based authentication structure prepared for full implementation
 - User context management through query client
 
-### Gamification System
-- **XP System**: Tasks reward 5-100 XP based on complexity
-- **Leveling**: 100 XP per level progression
-- **Streaks**: Daily activity tracking for engagement
-- **Achievements**: Milestone-based reward system
-- **Progress Tracking**: Visual progress indicators and statistics
+### Core Features
+
+#### Goal-Setting & Timeline Generation
+- **Goal Creation**: Short-term (1-30 days) and long-term (30+ days) goal types
+- **Automatic Timeline**: System generates milestone tasks based on goal deadline
+- **Smart Scheduling**: Tasks distributed optimally across timeline period
+- **Deadline Tracking**: Visual countdown and progress indicators
+
+#### Enhanced Task Management
+- **CRUD Operations**: Full task lifecycle management with goal association
+- **Resource Integration**: External links (YouTube videos, articles) attached to tasks
+- **Time Estimation**: Task duration planning for better scheduling
+- **Categorization**: Organized task categories (personal, work, health, learning)
+- **Priority System**: Three-tier priority levels with visual indicators
+
+#### Pomodoro Timer Integration
+- **Multiple Timer Types**: Pomodoro (25min), short break (5min), long break (15min), custom sessions
+- **Task Association**: Link timer sessions to specific tasks for focused work
+- **Session Tracking**: Complete history of all focus sessions
+- **Bonus Rewards**: Extra XP earned for completed Pomodoro sessions
+- **Audio Notifications**: Timer completion alerts
+
+#### Advanced Gamification System
+- **XP System**: Tasks reward 5-100 XP based on complexity and completion
+- **Gem Rewards**: Special currency earned for completing tasks on time
+- **Leveling**: 100 XP per level progression with visual progress rings
+- **Streaks**: Daily activity tracking for sustained engagement
+- **Achievements**: Milestone-based reward system for major accomplishments
+- **Progress Tracking**: Comprehensive visual indicators and statistics
 
 ### Task Management
 - **CRUD Operations**: Full task lifecycle management
