@@ -4,29 +4,36 @@ import { useState } from "react";
 import { getCurrentDate, formatDate } from "@/lib/utils";
 import Sidebar from "@/components/sidebar";
 import TaskModal from "@/components/task-modal";
+import GoalModal from "@/components/goal-modal";
 import TaskItem from "@/components/task-item";
 import ProgressRing from "@/components/progress-ring";
+import PomodoroTimer from "@/components/pomodoro-timer";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import type { Task, User, Achievement } from "@shared/schema";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { Task, User, Achievement, Goal } from "@shared/schema";
 
 interface DashboardData {
   user: User;
   todayTasks: Task[];
+  goals: Goal[];
   achievements: Achievement[];
   stats: {
     progressPercentage: number;
     completedTasks: number;
     totalTasks: number;
     earnedXP: number;
+    earnedGems: number;
   };
 }
 
 export default function Dashboard() {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   const [taskFilter, setTaskFilter] = useState("all");
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const today = getCurrentDate();
 
   const { data: dashboardData, isLoading } = useQuery<DashboardData>({

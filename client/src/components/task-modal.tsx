@@ -18,7 +18,10 @@ const taskSchema = z.object({
   title: z.string().min(1, "Task title is required"),
   category: z.string().min(1, "Category is required"),
   priority: z.enum(["low", "medium", "high"]),
+  estimatedTime: z.number().min(5).max(480).optional(),
+  externalLinks: z.string().optional(),
   xpReward: z.number().min(5).max(100),
+  gemReward: z.number().min(1).max(10),
   dueTime: z.string().optional(),
 });
 
@@ -39,7 +42,10 @@ export default function TaskModal({ isOpen, onClose, onTaskCreated }: TaskModalP
       title: "",
       category: "personal",
       priority: "medium",
+      estimatedTime: 60,
+      externalLinks: "",
       xpReward: 20,
+      gemReward: 1,
       dueTime: "",
     },
   });
@@ -159,15 +165,16 @@ export default function TaskModal({ isOpen, onClose, onTaskCreated }: TaskModalP
 
             <FormField
               control={form.control}
-              name="xpReward"
+              name="estimatedTime"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>XP Reward</FormLabel>
+                  <FormLabel>Estimated Time (minutes)</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
                       min="5"
-                      max="100"
+                      max="480"
+                      placeholder="60"
                       {...field}
                       onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                     />
@@ -176,6 +183,65 @@ export default function TaskModal({ isOpen, onClose, onTaskCreated }: TaskModalP
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="externalLinks"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>External Links (Optional)</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="https://youtube.com/watch?v=... (separate multiple links with commas)"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="xpReward"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>XP Reward</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="5"
+                        max="100"
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="gemReward"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Gem Reward</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="1"
+                        max="10"
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}

@@ -72,11 +72,11 @@ export default function TaskItem({
         <h4 className={`font-medium text-gray-900 ${task.completed ? 'line-through' : ''}`}>
           {task.title}
         </h4>
-        <div className="flex items-center space-x-4 mt-1">
+        <div className="flex items-center flex-wrap gap-2 mt-1">
           {task.completed ? (
             <Badge className="bg-green-100 text-green-800 border-green-200">
               <i className="fas fa-check-circle mr-1"></i>
-              Completed
+              Completed {task.completedOnTime ? '(On Time!)' : ''}
             </Badge>
           ) : (
             <Badge className={priorityBadgeClass}>
@@ -90,22 +90,63 @@ export default function TaskItem({
             {task.category.charAt(0).toUpperCase() + task.category.slice(1)}
           </Badge>
 
-          {task.completed && task.completedAt ? (
-            <span className="text-sm text-gray-500">
-              Completed at {formatCompletedTime(task.completedAt)}
-            </span>
-          ) : task.dueTime ? (
-            <span className="text-sm text-gray-500">
-              Due: {formatTime(task.dueTime)}
-            </span>
-          ) : null}
+          {task.estimatedTime && (
+            <Badge variant="outline" className="text-blue-600 border-blue-200">
+              <i className="fas fa-clock mr-1"></i>
+              {task.estimatedTime}m
+            </Badge>
+          )}
 
-          <span className={`text-sm font-medium ${
-            task.completed ? 'text-green-600' : 'text-gray-500'
-          }`}>
-            {task.completed ? '+' : ''}{task.xpReward} XP
-          </span>
+          <div className="flex items-center space-x-3 text-sm">
+            {task.completed && task.completedAt ? (
+              <span className="text-gray-500">
+                Completed at {formatCompletedTime(task.completedAt)}
+              </span>
+            ) : task.dueTime ? (
+              <span className="text-gray-500">
+                Due: {formatTime(task.dueTime)}
+              </span>
+            ) : null}
+
+            <span className={`font-medium ${
+              task.completed ? 'text-green-600' : 'text-gray-500'
+            }`}>
+              {task.completed ? '+' : ''}{task.xpReward} XP
+            </span>
+
+            {task.completed && task.completedOnTime && (
+              <span className="text-amber-600 font-medium">
+                <i className="fas fa-gem mr-1"></i>
+                +{task.gemReward} Gem{task.gemReward !== 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
         </div>
+
+        {/* External Links */}
+        {task.externalLinks && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {task.externalLinks.split(',').map((link, index) => {
+              const trimmedLink = link.trim();
+              if (!trimmedLink) return null;
+              
+              const isYouTube = trimmedLink.includes('youtube.com') || trimmedLink.includes('youtu.be');
+              
+              return (
+                <a
+                  key={index}
+                  href={trimmedLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center space-x-1 text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded hover:bg-blue-100 transition-colors"
+                >
+                  <i className={`fas ${isYouTube ? 'fa-video' : 'fa-external-link-alt'}`}></i>
+                  <span>{isYouTube ? 'YouTube' : 'Link'} {index + 1}</span>
+                </a>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="flex items-center space-x-2">

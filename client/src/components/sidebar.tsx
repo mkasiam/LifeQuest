@@ -49,9 +49,15 @@ export default function Sidebar({ user, achievements = [] }: SidebarProps) {
                 style={{ width: `${xpProgress}%` }}
               ></div>
             </div>
-            <div className="flex justify-between text-xs opacity-90">
+            <div className="flex justify-between text-xs opacity-90 mb-3">
               <span>{user.xp} XP</span>
               <span>{nextLevelXp} XP</span>
+            </div>
+            
+            {/* Gems Display */}
+            <div className="flex items-center justify-center space-x-2 bg-white/20 rounded-lg py-2">
+              <i className="fas fa-gem text-amber-300"></i>
+              <span className="font-semibold">{user.gems} Gems</span>
             </div>
           </div>
         )}
