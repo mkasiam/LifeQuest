@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertTaskSchema, insertGoalSchema, insertPomodoroSessionSchema, type Goal, type InsertTask } from "@shared/schema";
 import { z } from "zod";
+import { authenticateToken, type AuthenticatedRequest } from "./auth-middleware";
 
 // Timeline generation utility
 function generateGoalTimeline(goal: Goal): (InsertTask & { date: string })[] {
@@ -60,14 +61,10 @@ function generateGoalTimeline(goal: Goal): (InsertTask & { date: string })[] {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Get current user (simplified - in real app would use authentication)
-  app.get("/api/user", async (req, res) => {
+  // Get current authenticated user
+  app.get("/api/user", authenticateToken, async (req: AuthenticatedRequest, res) => {
     try {
-      const user = await storage.getUser(1); // Default user for demo
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      res.json(user);
+      res.json(req.user);
     } catch (error) {
       res.status(500).json({ message: "Failed to get user" });
     }

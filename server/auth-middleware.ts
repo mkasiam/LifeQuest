@@ -18,6 +18,10 @@ export const authenticateToken = async (
   next: NextFunction
 ) => {
   try {
+    if (!adminAuth) {
+      return res.status(500).json({ message: 'Firebase Admin not properly configured' });
+    }
+
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
